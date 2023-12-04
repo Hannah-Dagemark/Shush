@@ -116,7 +116,7 @@ class Reader:
         for y in range(self.imageheight):
             for x in range(self.imagewidth):
                 if not ended == True:
-                    iof.output("At pixel: " + str(x) + "," + str(y) + "\nWith color: " + str(self.img.getpixel((x,y))), "F")
+                    iof.output(f"At pixel: {x},{y}\nWith color: {self.img.getpixel((x,y))}", "F")
                     
                     match self.img.getpixel((x,y)):
                         case (0,0,0):
@@ -167,7 +167,7 @@ class Reader:
             else:
                 if self.img.getpixel((b, y + 1)) != (0,0,0) and self.img.getpixel((b, y + 1)) != (255,255,255):
                     endchecker += 1
-                    iof.output("Endchecker at: " + str(endchecker) + "\nUsing pixel: " + str(self.img.getpixel((b, y + 1))) + "\nAt position: " + str(b) + "," + str(y+1), "F")
+                    iof.output(f"Endchecker at: {str(endchecker)}\nUsing pixel: {str(self.img.getpixel((b, y + 1)))}\nAt position: {str(b)},{str(y+1)}", "F")
                     b += 1
                 else:
                     b = 11

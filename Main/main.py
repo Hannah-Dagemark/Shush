@@ -1,36 +1,34 @@
 from PIL import Image
-from math import ceil
-from Dicts import MORSE_DICT, ALPH_DICT
+from dicts import MORSE_DICT, ALPH_DICT
 import os
 
 print(MORSE_DICT["A"])
 
 class Func:
     
-    def __init__(self,):
+    def __init__(self):
         if os.path.exists("error.txt"):
             os.remove("error.txt")
         self.errortext = open('error.txt', 'a')
-        self.errortext.writelines("INITIATING\n")
+        self.errortext.write("INITIATING\n")
         
     def output(self, string, mode):
         string = str(string)
         if mode == "T" or mode == "B": print(string)
-        self.errortext = open('error.txt', 'a')
         if mode == "F" or mode == "B": self.errortext.writelines(string + "\n")
+    
+    def close(self):
+        self.errortext.close()
+        
 iof = Func()
 
 class Main:
     
     def __init__(self):
-        self.intro()
-        
-    def intro(self):
         self.choice_loop()
             
     def choice_loop(self):
-        print("Choose operation:\nTitle: input\nConvert Image: convert\nRead Encrypted Image: read\nExit Program: exit\n")
-        match input():
+        match input("Choose operation:\nTitle: input\nConvert Image: convert\nRead Encrypted Image: read\nExit Program: exit\n"):
             case "convert":
                 print("Welcome to the Shush Converter\nPlease enter the name of your image, including the extension")
                 self.path_img = "./input/" + input()
@@ -48,41 +46,36 @@ class Main:
                 exit()
             case _:
                 print("Invalid Input. Please make sure you spelled correctly, and used lower case letters thoughout.")
-        
-
-
 class Converter:
-    
-    def run(self):
-        self.loadObjects()
-        self.convertFunction()
         
     def __init__(self, image_path, text_path):
         self.img_path = image_path
         self.txt_path = text_path
         self.morse_text = ""
         self.img = Image.open(self.img_path).convert("RGBA")
+        
+    def run(self):
+        self.load_objects()
+        self.convert_function()
     
-    def loadObjects(self):
+    def load_objects(self):
         self.imagewidth, self.imageheight = self.img.size
         with open(self.txt_path) as x:
             self.raw_text = x.readlines()
             iof.output(self.raw_text, "B")
         for line in self.raw_text:
-            for letter in line:
-                self.morse_text += (MORSE_DICT[letter.upper()] + " ")
+            self.morse_text += " ".join(MORSE_DICT[letter.upper()] for letter in line) + " "
             iof.output(self.morse_text, "B")
         
-    def convertFunction(self):
-        incrementer,x,y = 0,0,0
-        for letter in self.morse_text:
-            incrementer += 1
+    def convert_function(self):
+        x, y = 0, 0
+        for incrementer, letter in enumerate(self.morse_text):
             if x < self.imagewidth - 1:
                 x += 1
             else:
                 y += 1
                 x = 0
-            self.R, self.G, self.B = self.img.getpixel((x,y))[0], self.img.getpixel((x,y))[1], self.img.getpixel((x,y))[2]
+            self.R, self.G, self.B, _ = self.img.getpixel((x,y))
             match letter:
                 case ".":
                     self.img.putpixel((x,y), (self.R, self.G, self.B, 254))
@@ -93,53 +86,54 @@ class Converter:
                 case "|":
                     continue
             iof.output(f"{self.img.getpixel((x,y))}", "F")
-            iof.output(str(incrementer/len(self.morse_text)*100) + "%", "F")
-        self.img.save("converted_image.png")
+            iof.output(f"{incrementer/len(self.morse_text)*100}%", "F")
+        self.img.save(f"output/{input('Please put your Image\'s output name: ')}.png")
 
 class Reader:
-    def run(self):
-        self.loadObjects()
-        self.readFunction()
-        self.out = open('output/text.txt', 'a')
-        self.out.writelines(self.normal_text)
-
+    
     def __init__(self, image_path):
         self.img_path = image_path
         self.normal_text = ""
         self.morse_text = ""
-        
-    def loadObjects(self):
+    
+    def run(self):
+        self.load_objects()
+        self.read_function()
+        self.ender_function()
+        self.out = open('output/text.txt', 'a')
+        self.out.writelines(self.normal_text)
+            
+    def load_objects(self):
         self.img = Image.open(self.img_path).convert("RGBA")
         self.imagewidth, self.imageheight = self.img.size
         
-    def readFunction(self):
+    def read_function(self):
         escaperange = 0
-        ended = False
         for y in range(self.imageheight):
             for x in range(self.imagewidth):
-                if not ended == True:
-                    iof.output(f"At pixel: {x},{y}\nWith color: {self.img.getpixel((x,y))}", "F")
-                    
-                    match self.img.getpixel((x,y))[3]:
-                        case (254):
-                            iof.output("Found .", "B")
-                            self.morse_text += "."
-                        case (253):
-                            iof.output("Found -", "B")
-                            self.morse_text += "-"
-                        case _:
-                            if escaperange == 0:
-                                ii = self.futurecheck(x,y)
-                                if ii == 2:
-                                    escaperange = 2
-                                    self.morse_text += " | "
-                                elif ii == 1:
-                                    self.morse_text += " "
-                                else:
-                                    ended = True
-                                    iof.output("Ended at: " + str(x) + "," + str(y), "B")
+                iof.output(f"At pixel: {x},{y}\nWith color: {self.img.getpixel((x,y))}", "F")
+                match self.img.getpixel((x,y))[3]:
+                    case 254:
+                        iof.output("Found .", "B")
+                        self.morse_text += "."
+                    case 253:
+                        iof.output("Found -", "B")
+                        self.morse_text += "-"
+                    case _:
+                        if escaperange == 0:
+                            ii = self.future_check(x,y)
+                            if ii == 2:
+                                escaperange = 2
+                                self.morse_text += " | "
+                            elif ii == 1:
+                                self.morse_text += " "
                             else:
-                                escaperange -= 1
+                                iof.output(f"Ended at: {x},{y}", "B")
+                                return
+                        else:
+                            escaperange -= 1
+    
+    def ender_function(self):
         iof.output(self.morse_text, "B")
         sequence = ""
         for letter in self.morse_text:
@@ -154,7 +148,7 @@ class Reader:
         iof.output(self.normal_text, "B")
                 
                             
-    def futurecheck(self,x,y):
+    def future_check(self,x,y):
         endchecker = 0
         a = 0
         b = 0
@@ -162,14 +156,14 @@ class Reader:
             if x + a < self.imagewidth:
                 if self.img.getpixel((x + a, y))[3] == 255:
                     endchecker += 1
-                    iof.output("Endchecker at: " + str(endchecker) + "\nUsing pixel: " + str(self.img.getpixel((x + a, y))) + "\nAt position: " + str(x+a) + "," + str(y), "F")
+                    iof.output(f"Endchecker at: {endchecker}\nUsing pixel: {self.img.getpixel((x + a, y))}\nAt position: {x+a},{y}", "F")
                     a += 1
                 else:
                     a = 11
             else:
                 if self.img.getpixel((b, y + 1))[3] == 255:
                     endchecker += 1
-                    iof.output(f"Endchecker at: {str(endchecker)}\nUsing pixel: {str(self.img.getpixel((b, y + 1)))}\nAt position: {str(b)},{str(y+1)}", "F")
+                    iof.output(f"Endchecker at: {endchecker}\nUsing pixel: {self.img.getpixel((b, y + 1))}\nAt position: {b},{y+1}", "F")
                     b += 1
                 else:
                     b = 11
@@ -192,6 +186,6 @@ class Reader:
                 iof.output("Adding letter separation", "F")
                 return 1
     
-    
-Starter = Main()
-Starter.intro()
+if __name__ == "__main__":
+    Starter = Main()
+    iof.close()

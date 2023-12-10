@@ -61,7 +61,7 @@ class Converter:
         self.img_path = image_path
         self.txt_path = text_path
         self.morse_text = ""
-        self.img = Image.open(self.img_path).convert("RGB")
+        self.img = Image.open(self.img_path).convert("RGBA")
     
     def loadObjects(self):
         self.imagewidth, self.imageheight = self.img.size
@@ -82,15 +82,17 @@ class Converter:
             else:
                 y += 1
                 x = 0
+            self.R, self.G, self.B = self.img.getpixel((x,y))[0], self.img.getpixel((x,y))[1], self.img.getpixel((x,y))[2]
             match letter:
                 case ".":
-                    self.img.putpixel((x,y), (0, 0, 0))
+                    self.img.putpixel((x,y), (self.R, self.G, self.B, 254))
                 case "-":
-                    self.img.putpixel((x,y), (255, 255, 255))
+                    self.img.putpixel((x,y), (self.R, self.G, self.B, 253))
                 case " ":
                     continue
                 case "|":
                     continue
+            iof.output(f"{self.img.getpixel((x,y))}", "F")
             iof.output(str(incrementer/len(self.morse_text)*100) + "%", "F")
         self.img.save("converted_image.png")
 
@@ -107,7 +109,7 @@ class Reader:
         self.morse_text = ""
         
     def loadObjects(self):
-        self.img = Image.open(self.img_path).convert("RGB")
+        self.img = Image.open(self.img_path).convert("RGBA")
         self.imagewidth, self.imageheight = self.img.size
         
     def readFunction(self):
@@ -118,12 +120,12 @@ class Reader:
                 if not ended == True:
                     iof.output(f"At pixel: {x},{y}\nWith color: {self.img.getpixel((x,y))}", "F")
                     
-                    match self.img.getpixel((x,y)):
-                        case (0,0,0):
-                            iof.output("Found black", "B")
+                    match self.img.getpixel((x,y))[3]:
+                        case (254):
+                            iof.output("Found .", "B")
                             self.morse_text += "."
-                        case (255,255,255):
-                            iof.output("Found white", "B")
+                        case (253):
+                            iof.output("Found -", "B")
                             self.morse_text += "-"
                         case _:
                             if escaperange == 0:
@@ -149,7 +151,7 @@ class Reader:
                 elif letter == " " and sequence != "":
                     self.normal_text += ALPH_DICT[sequence]
                     sequence = ""
-        iof.output(self.normal_text, "F")
+        iof.output(self.normal_text, "B")
                 
                             
     def futurecheck(self,x,y):
@@ -158,14 +160,14 @@ class Reader:
         b = 0
         while a + b <= 10:
             if x + a < self.imagewidth:
-                if self.img.getpixel((x + a, y)) != (0,0,0) and self.img.getpixel((x + a, y)) != (255,255,255):
+                if self.img.getpixel((x + a, y))[3] == 255:
                     endchecker += 1
                     iof.output("Endchecker at: " + str(endchecker) + "\nUsing pixel: " + str(self.img.getpixel((x + a, y))) + "\nAt position: " + str(x+a) + "," + str(y), "F")
                     a += 1
                 else:
                     a = 11
             else:
-                if self.img.getpixel((b, y + 1)) != (0,0,0) and self.img.getpixel((b, y + 1)) != (255,255,255):
+                if self.img.getpixel((b, y + 1))[3] == 255:
                     endchecker += 1
                     iof.output(f"Endchecker at: {str(endchecker)}\nUsing pixel: {str(self.img.getpixel((b, y + 1)))}\nAt position: {str(b)},{str(y+1)}", "F")
                     b += 1
@@ -176,14 +178,14 @@ class Reader:
             return 10
         if x + 2 <= self.imagewidth:
             iof.output("Using one-line space checking method", "F")
-            if self.img.getpixel((x + 1, y)) != (0,0,0) and self.img.getpixel((x + 1, y)) != (255,255,255):
+            if self.img.getpixel((x + 1, y))[3] == 255:
                 iof.output("Adding space", "F")
                 return 2
             else:
                 iof.output("Adding letter separation", "F")
                 return 1
         else:
-            if self.img.getpixel((0, y+1)) != (0,0,0) and self.img.getpixel((0, y+1)) != (255,255,255):
+            if self.img.getpixel((0, y+1))[3] == 255:
                 iof.output("Adding space", "F")
                 return 2
             else:

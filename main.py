@@ -1,9 +1,19 @@
+<<<<<<< Updated upstream:main.py
 from PIL import Image
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 import sv_ttk
+=======
+import tkinter
+import PIL
+>>>>>>> Stashed changes:Main/main.py
 import os
+import time
+from PIL import Image
+from tkinter import filedialog
+from dicts import MORSE_DICT, ALPH_DICT
+
 
 MORSE_DICT = { 'A':'.-', 'B':'-...',
                'C':'-.-.', 'D':'-..', 'E':'.',
@@ -66,16 +76,18 @@ class Main:
     def choice_loop(self):
         match input("Choose operation:\n\"Title\": \"input\"\nConvert Image: convert\nRead Encrypted Image: read\nExit Program: exit\n"):
             case "convert":
-                print("Welcome to the Shush Converter\nPlease enter the name of your image, including the extension")
-                self.path_img = "./input/" + input()
-                print("Please enter the name of text file, including the extension")
-                self.path_txt = "./input/" + input()
-                print("Current path is: " + self.path_img + " and: " + self.path_txt)
+                print("Welcome to the Shush Converter\nPlease select your image file in the popup explorer window.")
+                time.sleep(2)
+                self.path_img = tkinter.filedialog.askopenfilename()
+                print("Please select your text file in the popup explorer window.")
+                time.sleep(2)
+                self.path_txt = tkinter.filedialog.askopenfilename()
+                print("Current path is: " + self.path_img + "\nand: " + self.path_txt)
                 self.converter = Converter(self.path_img, self.path_txt)
                 self.converter.run()
             case "read":
-                print("Welcome to the Shush Reader\nPlease enter the name of your image, including the extension")
-                self.path_img = "./input/" + input()
+                print("Welcome to the Shush Reader\nPlease select your image file in the popup explorer window.")
+                self.path_img = tkinter.filedialog.askopenfilename()
                 self.reader = Reader(self.path_img)
                 self.reader.run()
             case "exit":
